@@ -9,7 +9,7 @@ class MyGLSurfaceView(context: Context): GLSurfaceView(context) {
 
     private val renderer: MyGLRenderer
 
-    private val TOUCH_SCALE_FACTOR: Float = 180.0f / 320f
+    private val touchScaleFactor: Float = 180.0f / 320f
     private var previousX: Float = 0f
     private var previousY: Float = 0f
 
@@ -46,7 +46,7 @@ class MyGLSurfaceView(context: Context): GLSurfaceView(context) {
                     dy *= -1
                 }
 
-                renderer.angle += (dx + dy) * TOUCH_SCALE_FACTOR
+                renderer.angle += (dx + dy) * touchScaleFactor
                 requestRender()
             }
         }
