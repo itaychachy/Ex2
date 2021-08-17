@@ -8,11 +8,16 @@ import java.nio.FloatBuffer
 // number of values per vertex in this array for each attribute
 const val VALUES = 4
 
-var verticesData = floatArrayOf(     // in counterclockwise order:
-    // positions                // color
-    0.0f, 0.25f, 0.0f, 1.0f,     1.0f, 0.0f ,0.0f, 1.0f,    // top vertex
-    -0.25f, 0.0f, 0.0f, 1.0f,   0.0f, 1.0f ,0.0f, 1.0f,   // bottom left vertex
-    0.25f, 0.0f, 0.0f, 1.0f,     0.0f, 0.0f ,1.0f, 1.0f   // bottom right vertex
+var verticesPositions = floatArrayOf(     // in counterclockwise order:
+    0.0f, 0.5f, 0.0f, 1.0f,   // top vertex
+    -0.5f, 0.0f, 0.0f, 1.0f, // bottom left vertex
+    0.5f, 0.0f, 0.0f, 1.0f, // bottom right vertex
+)
+
+var verticesColors = floatArrayOf(     // in counterclockwise order:
+    1.0f, 0.0f ,0.0f, 1.0f,    // top vertex
+    0.0f, 1.0f ,0.0f, 1.0f,   // bottom left vertex
+    0.0f, 0.0f ,1.0f, 1.0f   // bottom right vertex
 )
 
 
@@ -41,9 +46,9 @@ class Triangle {
                 "}"
 
 
-    private var vertexBuffer: FloatBuffer =
+    private var verticesPositionsBuffer: FloatBuffer =
         // (number of coordinate values * 4 bytes per float)
-        ByteBuffer.allocateDirect(verticesData.size * Float.SIZE_BYTES).run {
+        ByteBuffer.allocateDirect(verticesPositions.size * Float.SIZE_BYTES).run {
 
             // use the device hardware's native byte order
             order(ByteOrder.nativeOrder())
@@ -51,7 +56,23 @@ class Triangle {
             // create a floating point buffer from the ByteBuffer
             asFloatBuffer().apply {
                 // add the coordinates to the FloatBuffer
-                put(verticesData)
+                put(verticesPositions)
+                // set the buffer to read the first coordinate
+                position(0)
+            }
+        }
+
+    private var verticesColorsBuffer: FloatBuffer =
+        // (number of coordinate values * 4 bytes per float)
+        ByteBuffer.allocateDirect(verticesColors.size * Float.SIZE_BYTES).run {
+
+            // use the device hardware's native byte order
+            order(ByteOrder.nativeOrder())
+
+            // create a floating point buffer from the ByteBuffer
+            asFloatBuffer().apply {
+                // add the coordinates to the FloatBuffer
+                put(verticesColors)
                 // set the buffer to read the first coordinate
                 position(0)
             }
@@ -101,42 +122,45 @@ class Triangle {
     private var vPMatrixHandle: Int = 0
 
     private val vertexCount: Int = 3
-    private val vertexStride: Int = Float.SIZE_BYTES * 8
+    private val vertexStride: Int = Float.SIZE_BYTES * 4
 
     fun draw(mvpMatrix: FloatArray) {
+
         // Add program to OpenGL ES environment
         GLES20.glUseProgram(mProgram)
 
         // get handle to vertex shader's vPosition member
-        positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition")
-        colorHandle = GLES20.glGetAttribLocation(mProgram, "aColor")
+        positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition").also {handle ->
 
-        // Enable a handle to the triangle vertices
-        GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glEnableVertexAttribArray(colorHandle)
+            // Enable a handle to the triangle vertices
+            GLES20.glEnableVertexAttribArray(handle)
 
-        // Prepare the triangle coordinate data
-        GLES20.glVertexAttribPointer(
-            positionHandle,
-            VALUES,
-            GLES20.GL_FLOAT,
-            false,
-            vertexStride,
-            vertexBuffer
-        )
+            // Prepare the triangle coordinate data
+            GLES20.glVertexAttribPointer(
+                handle,
+                VALUES,
+                GLES20.GL_FLOAT,
+                false,
+                vertexStride,
+                verticesPositionsBuffer
+            )
+        }
 
-        vertexBuffer.position(4) // Float.SIZE_BYTES * 4 positions of a vertex
+        colorHandle = GLES20.glGetAttribLocation(mProgram, "aColor").also { handle ->
 
-        // Prepare the triangle color data
-        GLES20.glVertexAttribPointer(
-            colorHandle,
-            VALUES,
-            GLES20.GL_FLOAT,
-            false,
-            vertexStride,
-            vertexBuffer
-        )
+            // Enable a handle to the triangle vertices
+            GLES20.glEnableVertexAttribArray(handle)
 
+            // Prepare the triangle color data
+            GLES20.glVertexAttribPointer(
+                handle,
+                VALUES,
+                GLES20.GL_FLOAT,
+                false,
+                vertexStride,
+                verticesColorsBuffer
+            )
+        }
 
         // get handle to shape's transformation matrix
         vPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix").also {
